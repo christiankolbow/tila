@@ -2,19 +2,54 @@
   "name": "tila",
   "version": "1.0.0",
   "description": "Tila: A lightweight, performant, and minimalist state management solution tailored for React applications with TypeScript support.",
-  "main": "index.ts",
+  "main": "dist/esm/index.js",
+  "types": "dist/types/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "build-cjs": "tsc --project tsconfig.commonjs.json",
+    "postbuild": "npx uglify-js dist/esm/index.js -m -c -o dist/esm/index.min.mjs",
+    "postbuild-cjs": "npx uglify-js dist/cjs/index.js -m -c -o dist/cjs/index.min.cjs",
+    "prepublish": "npm run build && npm run build-cjs",
+    "demo": "npx parcel demo/index.html"
   },
+  "exports": {
+    ".": {
+      "require": "./dist/cjs/index.min.cjs",
+      "import": "./dist/esm/index.min.mjs",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "files": [
+    "dist/"
+  ],
   "keywords": [
     "tila",
-    "state",
-    "management",
-    "react"
+    "state management",
+    "next js",
+    "react",
+    "zustand",
+    "recoil",
+    "redux",
+    "jotai"
   ],
   "author": "Christian Kolbow",
   "license": "MIT",
-  "dependencies": {
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christiankolbow/tila.git"
+  },
+  "bugs": {
+    "url": "https://github.com/christiankolbow/tila/issues"
+  },
+  "homepage": "https://github.com/christiankolbow/tila#readme",
+  "peerDependencies": {
     "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.78",
+    "parcel": "^2.12.0",
+    "react": "^18.2.0",
+    "typescript": "^4.9.5",
+    "uglify-js": "^3.17.4"
   }
 }
