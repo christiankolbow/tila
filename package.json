@@ -1,0 +1,20 @@
+{
+  "name": "tila",
+  "version": "1.0.0",
+  "description": "Tila: A lightweight, performant, and minimalist state management solution tailored for React applications with TypeScript support.",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "tila",
+    "state",
+    "management",
+    "react"
+  ],
+  "author": "Christian Kolbow",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^18.2.0"
+  }
+}
