@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
+import _ from 'lodash';
 
 type AtomOptions<T> = {
   localStorageKey?: string;
@@ -7,6 +8,7 @@ type AtomOptions<T> = {
 type Atom<T> = {
   get: () => T;
   set: (newValue: T) => void;
+  setObj: (changes: ObjectChange | ObjectChange[]) => void;
   options: () => AtomOptions<T> | undefined;
   reset: () => T;
   subscribe: (callback: (newValue: T) => void) => () => void;
@@ -26,6 +28,11 @@ type DisclosureHandlers = { open: () => void; close: () => void; toggle: () => v
 type CounterOptions = {
   min?: number;
   max?: number;
+};
+
+type ObjectChange = {
+  path: string;
+  value: any;
 };
 
 type CounterHandlers = {
@@ -96,6 +103,20 @@ export const atom = <T>(initialValue: T | AtomGetter<T>, options?: AtomOptions<T
       value = newValue;
       computeValue();
     },
+    setObj(changes) {
+      const newValue = _.cloneDeep(value);
+
+      if (Array.isArray(changes)) {
+        changes.forEach((change) => {
+          _.set(newValue, change.path, change.value);
+        });
+      } else {
+        _.set(newValue, changes.path, changes.value);
+      }
+
+      value = newValue;
+      computeValue();
+    },
     options: () => {
       return options;
     },
@@ -132,6 +153,21 @@ export const useAtomValue = <T>(atom: Atom<T>): T => {
   }, []);
 
   return useSyncExternalStore(atom.subscribe, atom.get, atom.get);
+};
+
+export const useAtomValues = <T extends unknown[]>(...atoms: { [K in keyof T]: Atom<T[K]> }): T => {
+  const values = atoms.map((atom) => useAtomValue(atom));
+  return values as T;
+};
+
+export const useAtomStore = <T extends Record<string, Atom<any>>>(store: T): { [K in keyof T]: ReturnType<T[K]['get']> } => {
+  const values = {} as { [K in keyof T]: ReturnType<T[K]['get']> };
+  for (const key in store) {
+    if (Object.prototype.hasOwnProperty.call(store, key)) {
+      values[key as keyof T] = useAtomValue(store[key]) as ReturnType<T[typeof key]['get']>;
+    }
+  }
+  return values;
 };
 
 export const useAtomDisclosure = (atom: Atom<boolean>): [boolean, DisclosureHandlers] => {
@@ -192,4 +228,16 @@ export const useAtomCounter = (atom: Atom<number>): [number, CounterHandlers] =>
   };
 
   return [useSyncExternalStore(atom.subscribe, atom.get, atom.get), { increment, decrement, set, reset }];
+};
+
+export const useAtomObject = <T extends object>(atom: Atom<T>): [T, (changes: ObjectChange | ObjectChange[]) => void] => {
+  const options = atom.options() || ({} as AtomOptions<T>);
+  const { localStorageKey: key } = options;
+
+  useEffect(() => {
+    const storedValue = key ? localStorage.getItem(key) : null;
+    if (storedValue !== null && storedValue !== undefined) atom.set(JSON.parse(storedValue));
+  }, []);
+
+  return [useSyncExternalStore(atom.subscribe, atom.get, atom.get), atom.setObj];
 };
