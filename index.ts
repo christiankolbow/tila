@@ -100,23 +100,35 @@ export const atom = <T>(initialValue: T | AtomGetter<T>, options?: AtomOptions<T
   return {
     get: () => value,
     set: (newValue) => {
-      value = newValue;
-      computeValue();
+      if (!_.isEqual(value, newValue)) {
+        value = newValue;
+        computeValue();
+      }
     },
     setObj(changes) {
       const newValue = _.cloneDeep(value);
+      let hasChanged = false;
 
       if (Array.isArray(changes)) {
         changes.forEach((change) => {
-          _.set(newValue, change.path, change.value);
+          if (!_.isEqual(_.get(newValue, change.path), change.value)) {
+            _.set(newValue, change.path, change.value);
+            hasChanged = true;
+          }
         });
       } else {
-        _.set(newValue, changes.path, changes.value);
+        if (!_.isEqual(_.get(newValue, changes.path), changes.value)) {
+          _.set(newValue, changes.path, changes.value);
+          hasChanged = true;
+        }
       }
 
-      value = newValue;
-      computeValue();
+      if (hasChanged) {
+        value = newValue;
+        computeValue();
+      }
     },
+
     options: () => {
       return options;
     },
